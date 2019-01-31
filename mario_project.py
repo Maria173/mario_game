@@ -5,11 +5,14 @@ import sys
 
 pygame.init()
 
-FPS = 10
+FPS = 60
 WIDTH = 800
 HEIGHT = 374
 STEP = 10
 TILE_WIDTH = TILE_HEIGHT = 34
+JUMP_POWER = 10
+MOVE_SPEED = 7
+GRAVITY = 0.4
 BACKGROUND_COLOR = "#228B22"
 
 pygame.init()
@@ -46,7 +49,7 @@ def terminate():
 def start_screen():
     intro_text = ["             Super Mario",
                   "",
-                  "       If you want to begin",
+                  "       If you want to begin:",
                   "            press any key ",
                   "        or tap the window"]
 
@@ -86,26 +89,31 @@ level1 = [
         "-----------------------------------------------------------------------------",
         "-                                                                           -",
         "-                       --                                                  -",
-        "-                                                              ---          -",
-        "-     @       -                                                             -",
+        "-             x                                                 ---         -",
+        "-     @      --                     x                                       -",
         "-     --                            ------                                  -",
         "--                   ---                                                 ----",
-        "-                                                                           -",
+        "-                                                       x                   -",
         "-                                                       --                  -",
         "-                                                                           -",
         "-----------------------------------------------------------------------------"]
 level2 = [
         "-----------------------------------------------------------------------------",
         "-                                                                           -",
-        "-                       --                                                  -",
-        "-                                                              ---          -",
-        "-     --                                                                    -",
-        "- @                                 ------                                  -",
-        "--                                                                       ----",
         "-                                                                           -",
-        "-                                                       --                  -",
         "-                                                                           -",
+        "-   ----       x        --           x                                      -",
+        "- @         -------            -----------                      ---       F -",
+        "---                                             ----                     ----",
+        "-                                                       x                   -",
+        "-                                                       -----               -",
+        "-ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo-",
         "-----------------------------------------------------------------------------"]
+
+
+platforms = [] # то, во что мы будем врезаться
+obstacles = [] # то, из-за чего мы можем проиграть
+finish = []    # здесь хранится флаг
 
 
 def generate_level(level):
@@ -113,7 +121,17 @@ def generate_level(level):
     for y in range(len(level)):
         for x in range(len(level[y])):
             if level[y][x] == '-':
-                Tile('wall', x, y)
+                pf = Tile('wall', x, y)
+                platforms.append(pf)
+            elif level[y][x] == 'x':
+                ob = Tile('obstacle', x, y)
+                obstacles.append(ob)
+            elif level[y][x] == 'o':
+                ob = Tile('fire', x, y)
+                obstacles.append(ob)
+            elif level[y][x] == 'F':
+                fg = Tile('flag', x, y)
+                finish.append(fg)
             elif level[y][x] == '@':
                 new_player = Player(x, y)
 
@@ -121,7 +139,10 @@ def generate_level(level):
 
 
 tile_images = {'wall': load_image('mario_block.png'),
-               'player': load_image('mario.png')}
+               'player': load_image('mario.png'),
+               'obstacle': load_image('blackhole.png'),
+               'fire': load_image('fire.png'),
+               'flag': load_image('flag.png')}
 
 
 class Tile(pygame.sprite.Sprite):
@@ -137,8 +158,71 @@ class Player(pygame.sprite.Sprite):
     def __init__(self, pos_x, pos_y):
         super().__init__(player_group, all_sprites)
         self.image = tile_images['player']
-        self.rect = self.image.get_rect().move(TILE_WIDTH * pos_x + 15,
-                                               TILE_HEIGHT * pos_y + 5)
+        self.rect = self.image.get_rect().move(TILE_WIDTH * pos_x,
+                                               TILE_HEIGHT * pos_y)
+        self.yvel = 0  # скорость вертикального перемещения
+        self.onGround = False
+
+    def update(self, left, right, up, platforms, obstacles, finish):
+
+        for ob in obstacles:    # если мы натыкаемся на препятствие, то мы проиграли, игра заканчивается
+            if pygame.sprite.collide_rect(self, ob):
+                self.kill()
+                print('You lost!')
+                terminate()
+
+        for fg in finish:   # если мы достикли флаг, то мы выиграли, игра заканчивается
+            if pygame.sprite.collide_rect(self, fg):
+                print('You won!')
+                terminate()
+
+        if up:
+            if self.onGround:  # прыгаем, только когда на земле
+                self.yvel = -JUMP_POWER
+
+        if left:
+            self.xvel = -MOVE_SPEED  # влево = x - n
+
+
+        if right:
+            self.xvel = MOVE_SPEED  # вправо = x + n
+
+
+        if not (left or right):
+            self.xvel = 0
+
+
+        if not self.onGround:
+            self.yvel += GRAVITY
+
+        self.onGround = False
+        self.rect.y += self.yvel
+        self.collide(0, self.yvel, platforms)
+
+        self.rect.x += self.xvel  # переносим свои положение на xvel
+        self.collide(self.xvel, 0, platforms)
+
+
+
+    def collide(self, xvel, yvel, platforms):
+
+        for p in platforms:
+            if pygame.sprite.collide_rect(self, p):  # если есть пересечение платформы с игроком
+
+                if xvel > 0:  # если движется вправо
+                    self.rect.right = p.rect.left  # не движется вправо
+
+                if xvel < 0:  # если движется влево
+                    self.rect.left = p.rect.right  # не движется влево
+
+                if yvel > 0:  # если движется вниз
+                    self.rect.bottom = p.rect.top  # не падает вниз
+                    self.onGround = True  # тановится на блок
+                    self.yvel = 0
+
+                if yvel < 0:  # если движется вверх
+                    self.rect.top = p.rect.bottom  # не движется вверх
+                    self.yvel = 0
 
 
 class Camera:
@@ -155,58 +239,45 @@ class Camera:
         # self.dy = -(target.rect.y + target.rect.h // 2 - HEIGHT // 2)
 
 
+
 start_screen()
 player = generate_level(level2)
 camera = Camera()
 
+
+left = right = False  # по умолчанию - стоим
+up = False
 running = True
-pressed_left = False
-pressed_right = False
-pressed_up = False
-pressed_down = False
 while running:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
+    clock.tick(FPS)
+    for e in pygame.event.get():
+
+        if e.type == pygame.QUIT:
             running = False
-        elif event.type == pygame.KEYDOWN:  # check for key presses
-            if event.key == pygame.K_LEFT:  # left arrow turns left
-                pressed_left = True
-            elif event.key == pygame.K_RIGHT:  # right arrow turns right
-                pressed_right = True
-            elif event.key == pygame.K_UP:  # up arrow goes up
-                pressed_up = True
-            elif event.key == pygame.K_DOWN:  # down arrow goes down
-                pressed_down = True
-        elif event.type == pygame.KEYUP:  # check for key releases
-            if event.key == pygame.K_LEFT:  # left arrow turns left
-                pressed_left = False
-            elif event.key == pygame.K_RIGHT:  # right arrow turns right
-                pressed_right = False
-            elif event.key == pygame.K_UP:  # up arrow goes up
-                pressed_up = False
-            elif event.key == pygame.K_DOWN:  # down arrow goes down
-                pressed_down = False
 
-    # In your game loop, check for key states:
-    if pressed_left:
-        player.rect.x -= STEP
-    if pressed_right:
-        player.rect.x += STEP
-    if pressed_up:
-        player.rect.y -= STEP
-    if pressed_down:
-        player.rect.y += STEP
+        if e.type == pygame.KEYDOWN and e.key == pygame.K_UP:
+            up = True
+        if e.type == pygame.KEYDOWN and e.key == pygame.K_LEFT:
+            left = True
+        if e.type == pygame.KEYDOWN and e.key == pygame.K_RIGHT:
+            right = True
 
+        if e.type == pygame.KEYUP and e.key == pygame.K_UP:
+            up = False
+        if e.type == pygame.KEYUP and e.key == pygame.K_RIGHT:
+            right = False
+        if e.type == pygame.KEYUP and e.key == pygame.K_LEFT:
+            left = False
+
+    screen.fill(pygame.Color(BACKGROUND_COLOR))
+    tiles_group.draw(screen)
+    player_group.draw(screen)
     camera.update(player)
 
     for sprite in all_sprites:
         camera.apply(sprite)
 
-    screen.fill(pygame.Color(BACKGROUND_COLOR))
-    tiles_group.draw(screen)
-    player_group.draw(screen)
-
+    player.update(left, right, up, platforms, obstacles, finish)
     pygame.display.flip()
-    clock.tick(FPS)
-terminate()
 
+terminate()
