@@ -87,17 +87,18 @@ def start_screen():
 
 level1 = [
         "-----------------------------------------------------------------------------",
-        "-                                                                           -",
+        "-                        #                                                  -",
         "-                       --                                                  -",
         "-             x                                                 ---         -",
         "-     @      --                     x                                       -",
-        "-     --                            ------                                  -",
-        "--                   ---                                                 ----",
-        "-                                                       x                   -",
-        "-                                                       --                  -",
+        "-     --             #              ------                                  -",
+        "--                   ---                                                  ---",
+        "-                                                       x                F  -",
+        "-                                                       --               -  -",
         "-                                                                           -",
         "-----------------------------------------------------------------------------"]
 level2 = [
+<<<<<<< HEAD
         "----------------------------------------------------------------------------------------",
         "-                                                                           ------------",
         "-                                                                           ------------",
@@ -114,7 +115,7 @@ level2 = [
 platforms = [] # то, во что мы будем врезаться
 obstacles = [] # то, из-за чего мы можем проиграть
 finish = []    # здесь хранится флаг
-
+cllctd_obj = [] # собираемые объекты
 
 def generate_level(level):
     new_player, x, y = None, None, None
@@ -134,6 +135,9 @@ def generate_level(level):
                 finish.append(fg)
             elif level[y][x] == '@':
                 new_player = Player(x, y)
+            elif level[y][x] == '#':
+                drg = Drugs('coin', x, y, 5, 2)
+                cllctd_obj.append(drg)
 
     return new_player
 
@@ -142,7 +146,8 @@ tile_images = {'wall': load_image('mario_block.png'),
                'player': load_image('mario.png'),
                'obstacle': load_image('blackhole.png'),
                'fire': load_image('fire.png'),
-               'flag': load_image('flag.png')}
+               'flag': load_image('flag.png'),
+               'coin': load_image('coin1.png')}
 
 
 class Tile(pygame.sprite.Sprite):
@@ -153,6 +158,36 @@ class Tile(pygame.sprite.Sprite):
         self.rect = self.image.get_rect().move(TILE_WIDTH * pos_x,
                                                TILE_HEIGHT * pos_y)
 
+class Drugs(pygame.sprite.Sprite):
+    cntr = 0
+    def __init__(self, tile_type, pos_x, pos_y, columns, rows):
+        super().__init__(tiles_group, all_sprites)
+
+        self.frames = []
+        self.cut_sheet(tile_images[tile_type], columns, rows)
+        self.cur_frame = 0
+        self.image = self.frames[self.cur_frame]
+        self.image = pygame.transform.scale(self.image, (TILE_WIDTH, TILE_HEIGHT))
+        self.rect = self.rect.move(TILE_WIDTH * pos_x, TILE_HEIGHT * pos_y)
+
+    def cut_sheet(self, sheet, columns, rows):
+        self.rect = pygame.Rect(0, 0,
+                                sheet.get_width() // columns,
+                                sheet.get_height() // rows)
+        for j in range(rows):
+            for i in range(columns):
+                frame_location = (self.rect.w * i,
+                                  self.rect.h * j)
+                self.frames.append(sheet.subsurface(
+                    pygame.Rect(frame_location, self.rect.size)
+                ))
+
+    def update(self):
+        if Drugs.cntr % 5 == 0:
+            self.cur_frame = (self.cur_frame + 1) % len(self.frames)
+            self.image = self.frames[self.cur_frame]
+            self.image = pygame.transform.scale(self.image, (TILE_WIDTH, TILE_HEIGHT))
+        Drugs.cntr = (Drugs.cntr + 1) % 5
 
 class Player(pygame.sprite.Sprite):
     def __init__(self, pos_x, pos_y):
@@ -163,7 +198,7 @@ class Player(pygame.sprite.Sprite):
         self.yvel = 0  # скорость вертикального перемещения
         self.onGround = False
 
-    def update(self, left, right, up, platforms, obstacles, finish):
+    def update(self, left, right, up, platforms, obstacles, finish, cllctd_obj):
 
         for ob in obstacles:    # если мы натыкаемся на препятствие, то мы проиграли, игра заканчивается
             if pygame.sprite.collide_rect(self, ob):
@@ -175,6 +210,9 @@ class Player(pygame.sprite.Sprite):
             if pygame.sprite.collide_rect(self, fg):
                 print('You won!')
                 terminate()
+        for drg in cllctd_obj:
+            if pygame.sprite.collide_rect(self, drg):
+                drg.kill()
 
         if up:
             if self.onGround:  # прыгаем, только когда на земле
@@ -275,11 +313,12 @@ while running:
     tiles_group.draw(screen)
     player_group.draw(screen)
     camera.update(player)
+    tiles_group.update()
 
     for sprite in all_sprites:
         camera.apply(sprite)
 
-    player.update(left, right, up, platforms, obstacles, finish)
+    player.update(left, right, up, platforms, obstacles, finish, cllctd_obj)
     pygame.display.flip()
 
 terminate()
