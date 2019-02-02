@@ -23,6 +23,7 @@ clock = pygame.time.Clock()
 all_sprites = pygame.sprite.Group()
 tiles_group = pygame.sprite.Group()
 player_group = pygame.sprite.Group()
+coll_obj_group = pygame.sprite.Group()
 
 
 def load_image(name, colorkey=None):
@@ -98,6 +99,7 @@ level1 = [
         "-                                                                           -",
         "-----------------------------------------------------------------------------"]
 level2 = [
+
         "----------------------------------------------------------------------------------------",
         "-                                                                           ------------",
         "-                     #                     #       #                       ------------",
@@ -109,12 +111,14 @@ level2 = [
         "-                                                       -----          -    ------------",
         "-ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo------------",
         "----------------------------------------------------------------------------------------"]
+        
 
 
-platforms = [] # то, во что мы будем врезаться
-obstacles = [] # то, из-за чего мы можем проиграть
+platforms = []  # то, во что мы будем врезаться
+obstacles = []  # то, из-за чего мы можем проиграть
 finish = []    # здесь хранится флаг
-cllctd_obj = [] # собираемые объекты
+cllctd_obj = []  # собираемые объекты
+
 
 def generate_level(level):
     new_player, x, y = None, None, None
@@ -157,10 +161,12 @@ class Tile(pygame.sprite.Sprite):
         self.rect = self.image.get_rect().move(TILE_WIDTH * pos_x,
                                                TILE_HEIGHT * pos_y)
 
+
 class Drugs(pygame.sprite.Sprite):
-    cntr = 0
+
+
     def __init__(self, tile_type, pos_x, pos_y, columns, rows):
-        super().__init__(tiles_group, all_sprites)
+        super().__init__(coll_obj_group, all_sprites)
 
         self.frames = []
         self.cut_sheet(tile_images[tile_type], columns, rows)
@@ -182,11 +188,12 @@ class Drugs(pygame.sprite.Sprite):
                 ))
 
     def update(self):
-        if Drugs.cntr % 5 == 0:
-            self.cur_frame = (self.cur_frame + 1) % len(self.frames)
-            self.image = self.frames[self.cur_frame]
-            self.image = pygame.transform.scale(self.image, (TILE_WIDTH, TILE_HEIGHT))
-        Drugs.cntr = (Drugs.cntr + 1) % 5
+
+        self.cur_frame = (self.cur_frame + 1) % len(self.frames)
+        self.image = self.frames[self.cur_frame]
+        self.image = pygame.transform.scale(self.image, (TILE_WIDTH, TILE_HEIGHT))
+
+
 
 class Player(pygame.sprite.Sprite):
     def __init__(self, pos_x, pos_y):
@@ -220,14 +227,11 @@ class Player(pygame.sprite.Sprite):
         if left:
             self.xvel = -MOVE_SPEED  # влево = x - n
 
-
         if right:
             self.xvel = MOVE_SPEED  # вправо = x + n
 
-
         if not (left or right):
             self.xvel = 0
-
 
         if not self.onGround:
             self.yvel += GRAVITY
@@ -238,8 +242,6 @@ class Player(pygame.sprite.Sprite):
 
         self.rect.x += self.xvel  # переносим свои положение на xvel
         self.collide(self.xvel, 0, platforms)
-
-
 
     def collide(self, xvel, yvel, platforms):
 
@@ -278,12 +280,11 @@ class Camera:
         # self.dy = -(target.rect.y + target.rect.h // 2 - HEIGHT // 2)
 
 
-
 start_screen()
 player = generate_level(level2)
 camera = Camera()
 
-
+cntr = 0
 left = right = False  # по умолчанию - стоим
 up = False
 running = True
@@ -311,9 +312,11 @@ while running:
     screen.fill(pygame.Color(BACKGROUND_COLOR))
     tiles_group.draw(screen)
     player_group.draw(screen)
+    coll_obj_group.draw(screen)
     camera.update(player)
-    tiles_group.update()
-
+    if cntr % 5 == 0:
+        coll_obj_group.update()
+    cntr = (cntr + 1) % 5
     for sprite in all_sprites:
         camera.apply(sprite)
 
