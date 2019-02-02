@@ -1,6 +1,6 @@
 import os
 import pygame
-import random
+# import random
 import sys
 
 pygame.init()
@@ -14,6 +14,13 @@ JUMP_POWER = 10
 MOVE_SPEED = 7
 GRAVITY = 0.4
 BACKGROUND_COLOR = "#228B22"
+
+while True:
+    level = input('Level number (1, 2, 3, 4 or 5) : ')
+    if level in ['1', '2', '3', '4', '5']:
+        break
+    else:
+        print('There is no such level! Try again')
 
 pygame.init()
 
@@ -47,17 +54,19 @@ def terminate():
     sys.exit()
 
 
-def start_screen():
-    intro_text = ["             Super Mario",
+def start_screen(level_n):
+    need_str = "       You chose level " + str(level_n)
+    intro_text = ["           Super Mario",
                   "",
-                  "       If you want to begin:",
-                  "            press any key ",
-                  "        or tap the window"]
+                  need_str,
+                  "      If you want to begin:",
+                  "           press any key ",
+                  "       or tap the window"]
 
     fon = pygame.transform.scale(load_image('fon.jpg'), (WIDTH, HEIGHT + 50))
     screen.blit(fon, (0, 0))
     font = pygame.font.Font(None, 30)
-    text_coord = 30
+    text_coord = 15
     for line in intro_text:
         string_rendered = font.render(line, 1, pygame.Color('black'))
         intro_rect = string_rendered.get_rect()
@@ -77,27 +86,20 @@ def start_screen():
         clock.tick(FPS)
 
 
-# def load_level(filename):
-#     filename = 'data/' + filename
-#     with open(filename, 'r') as map_file:
-#         level_map = [line.strip() for line in map_file]
-#
-#     max_width = max(map(len, level_map))
-#     return list(map(lambda x: x.ljust(max_width, '.'), level_map))
-
-
 level1 = [
-        "-----------------------------------------------------------------------------",
-        "-                        #                                                  -",
-        "-                       --                                                  -",
-        "-             x                                                 ---         -",
-        "-     @      --                     x                                       -",
-        "-     --             #              ------                                  -",
-        "--                   ---                                                  ---",
-        "-                                                       x                F  -",
-        "-                                                       --               -  -",
-        "-                                                                           -",
-        "-----------------------------------------------------------------------------"]
+
+        "----------------------------------------------------------------------------------------",
+        "-                                                                           ------------",
+        "-                                                                      #    ------------",
+        "-                         x             ----            x             ---   ------------",
+        "- @               -----------                           -----               ------------",
+        "---                                                 x                       ------------",
+        "-         --                 #     --           #   -----        --------   ------------",
+        "-   #          #            -----               -                          F------------",
+        "------         -                                                           -------------",
+        "-ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo------------",
+        "----------------------------------------------------------------------------------------"]
+
 level2 = [
 
         "----------------------------------------------------------------------------------------",
@@ -112,7 +114,47 @@ level2 = [
         "-ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo------------",
         "----------------------------------------------------------------------------------------"]
         
+level3 = [
 
+        "----------------------------------------------------------------------------------------",
+        "-                                                                           ------------",
+        "- @                              #                       #                  ------------",
+        "--------                        --                       -          #x      ------------",
+        "-                  x         --                    x               ----     ------------",
+        "-                ----                         --------          --          ------------",
+        "-    #                                 ----                              F  ------------",
+        "-   ---                ---                          #                -----  ------------",
+        "-         -----                                    --------                 ------------",
+        "-ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo------------",
+        "----------------------------------------------------------------------------------------"]
+
+level4 = [
+
+        "----------------------------------------------------------------------------------------",
+        "-                                                                           ------------",
+        "-                                                      #                   #------------",
+        "-           x     --                                   --         ----     -------------",
+        "-           ---                        x        ---             x           ------------",
+        "-                 #            -----   -              #      ----           ------------",
+        "-     ----        -                                  --                   F ------------",
+        "-  @                  ----            #    ----                          ---------------",
+        "-  -                                 --                                     ------------",
+        "-ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo------------",
+        "----------------------------------------------------------------------------------------"]
+
+level5 = [
+
+        "----------------------------------------------------------------------------------------",
+        "-                                                                           ------------",
+        "-                #                                                X         ------------",
+        "-                -                                             -----        ------------",
+        "-  #   x                                         x                      #x  ------------",
+        "-  --  ---                           -----      --                     ---  ------------",
+        "-                          x   #                   #        ----            ------------",
+        "-           -----      -   -   -                   --                       ------------",
+        "-@                                                                         F------------",
+        "--ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo-------------",
+        "----------------------------------------------------------------------------------------"]
 
 platforms = []  # то, во что мы будем врезаться
 obstacles = []  # то, из-за чего мы можем проиграть
@@ -120,25 +162,25 @@ finish = []    # здесь хранится флаг
 cllctd_obj = []  # собираемые объекты
 
 
-def generate_level(level):
+def generate_level(what_level):
     new_player, x, y = None, None, None
-    for y in range(len(level)):
-        for x in range(len(level[y])):
-            if level[y][x] == '-':
+    for y in range(len(what_level)):
+        for x in range(len(what_level[y])):
+            if what_level[y][x] == '-':
                 pf = Tile('wall', x, y)
                 platforms.append(pf)
-            elif level[y][x] == 'x':
+            elif what_level[y][x] == 'x':
                 ob = Tile('obstacle', x, y)
                 obstacles.append(ob)
-            elif level[y][x] == 'o':
+            elif what_level[y][x] == 'o':
                 ob = Tile('fire', x, y)
                 obstacles.append(ob)
-            elif level[y][x] == 'F':
+            elif what_level[y][x] == 'F':
                 fg = Tile('flag', x, y)
                 finish.append(fg)
-            elif level[y][x] == '@':
+            elif what_level[y][x] == '@':
                 new_player = Player(x, y)
-            elif level[y][x] == '#':
+            elif what_level[y][x] == '#':
                 drg = Drugs('coin', x, y, 5, 2)
                 cllctd_obj.append(drg)
 
@@ -163,8 +205,6 @@ class Tile(pygame.sprite.Sprite):
 
 
 class Drugs(pygame.sprite.Sprite):
-
-
     def __init__(self, tile_type, pos_x, pos_y, columns, rows):
         super().__init__(coll_obj_group, all_sprites)
 
@@ -194,7 +234,6 @@ class Drugs(pygame.sprite.Sprite):
         self.image = pygame.transform.scale(self.image, (TILE_WIDTH, TILE_HEIGHT))
 
 
-
 class Player(pygame.sprite.Sprite):
     def __init__(self, pos_x, pos_y):
         super().__init__(player_group, all_sprites)
@@ -204,33 +243,32 @@ class Player(pygame.sprite.Sprite):
         self.yvel = 0  # скорость вертикального перемещения
         self.onGround = False
 
-    def update(self, left, right, up, platforms, obstacles, finish, cllctd_obj):
-
-        for ob in obstacles:    # если мы натыкаемся на препятствие, то мы проиграли, игра заканчивается
+    def update(self, left_d, right_d, up_d, platforms_list, obstacles_list, finish_list, cllctd_obj_list):
+        for ob in obstacles_list:    # если мы натыкаемся на препятствие, то мы проиграли, игра заканчивается
             if pygame.sprite.collide_rect(self, ob):
                 self.kill()
                 print('You lost!')
                 terminate()
 
-        for fg in finish:   # если мы достикли флаг, то мы выиграли, игра заканчивается
+        for fg in finish_list:   # если мы достикли флаг, то мы выиграли, игра заканчивается
             if pygame.sprite.collide_rect(self, fg):
                 print('You won!')
                 terminate()
-        for drg in cllctd_obj:
+        for drg in cllctd_obj_list:
             if pygame.sprite.collide_rect(self, drg):
                 drg.kill()
 
-        if up:
+        if up_d:
             if self.onGround:  # прыгаем, только когда на земле
                 self.yvel = -JUMP_POWER
 
-        if left:
+        if left_d:
             self.xvel = -MOVE_SPEED  # влево = x - n
 
-        if right:
+        if right_d:
             self.xvel = MOVE_SPEED  # вправо = x + n
 
-        if not (left or right):
+        if not (left_d or right_d):
             self.xvel = 0
 
         if not self.onGround:
@@ -238,28 +276,28 @@ class Player(pygame.sprite.Sprite):
 
         self.onGround = False
         self.rect.y += self.yvel
-        self.collide(0, self.yvel, platforms)
+        self.collide(0, self.yvel, platforms_list)
 
         self.rect.x += self.xvel  # переносим свои положение на xvel
-        self.collide(self.xvel, 0, platforms)
+        self.collide(self.xvel, 0, platforms_list)
 
-    def collide(self, xvel, yvel, platforms):
+    def collide(self, x_vel, y_vel, platforms_list):
 
-        for p in platforms:
+        for p in platforms_list:
             if pygame.sprite.collide_rect(self, p):  # если есть пересечение платформы с игроком
 
-                if xvel > 0:  # если движется вправо
+                if x_vel > 0:  # если движется вправо
                     self.rect.right = p.rect.left  # не движется вправо
 
-                if xvel < 0:  # если движется влево
+                if x_vel < 0:  # если движется влево
                     self.rect.left = p.rect.right  # не движется влево
 
-                if yvel > 0:  # если движется вниз
+                if y_vel > 0:  # если движется вниз
                     self.rect.bottom = p.rect.top  # не падает вниз
                     self.onGround = True  # тановится на блок
                     self.yvel = 0
 
-                if yvel < 0:  # если движется вверх
+                if y_vel < 0:  # если движется вверх
                     self.rect.top = p.rect.bottom  # не движется вверх
                     self.yvel = 0
 
@@ -276,18 +314,32 @@ class Camera:
     def update(self, target):
         if target.rect.x >= WIDTH // 2:
             self.dx = -(target.rect.x - WIDTH // 2)
-
         # self.dy = -(target.rect.y + target.rect.h // 2 - HEIGHT // 2)
 
 
-start_screen()
-player = generate_level(level2)
+if level == '1':
+    start_screen(1)
+    player = generate_level(level1)
+if level == '2':
+    start_screen(2)
+    player = generate_level(level2)
+if level == '3':
+    start_screen(3)
+    player = generate_level(level3)
+if level == '4':
+    start_screen(4)
+    player = generate_level(level4)
+if level == '5':
+    start_screen(5)
+    player = generate_level(level5)
+
 camera = Camera()
 
 cntr = 0
 left = right = False  # по умолчанию - стоим
 up = False
 running = True
+
 while running:
     clock.tick(FPS)
     for e in pygame.event.get():
@@ -314,9 +366,11 @@ while running:
     player_group.draw(screen)
     coll_obj_group.draw(screen)
     camera.update(player)
+
     if cntr % 5 == 0:
         coll_obj_group.update()
     cntr = (cntr + 1) % 5
+
     for sprite in all_sprites:
         camera.apply(sprite)
 
