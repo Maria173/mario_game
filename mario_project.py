@@ -1,11 +1,11 @@
 import os
 import pygame
-# import random
+import random
 import sys
 
 pygame.init()
 
-FPS = 100
+FPS = 60
 WIDTH = 800
 HEIGHT = 374
 STEP = 10
@@ -14,7 +14,6 @@ JUMP_POWER = 10
 MOVE_SPEED = 7
 GRAVITY = 0.4
 BACKGROUND_COLOR = "#228B22"
-
 while True:
     level = input('Level number (1, 2, 3, 4 or 5) : ')
     if level in ['1', '2', '3', '4', '5']:
@@ -31,8 +30,7 @@ all_sprites = pygame.sprite.Group()
 tiles_group = pygame.sprite.Group()
 player_group = pygame.sprite.Group()
 coll_obj_group = pygame.sprite.Group()
-
-
+stars_group = pygame.sprite.Group()
 def load_image(name, colorkey=None):
     fullname = os.path.join('data', name)
     try:
@@ -52,6 +50,8 @@ def load_image(name, colorkey=None):
 def terminate():
     pygame.quit()
     sys.exit()
+
+
 
 
 def start_screen(level_n):
@@ -91,9 +91,9 @@ level1 = [
         "----------------------------------------------------------------------------------------",
         "-                                                                           ------------",
         "-                                                                      #    ------------",
-        "-                         x             ----            x             ---   ------------",
+        "-                                      ----                           ---   ------------",
         "- @               -----------                           -----               ------------",
-        "---                                                 x                       ------------",
+        "---                                                                         ------------",
         "-         --                 #     --           #   -----        --------   ------------",
         "-   #          #            -----               -                          F------------",
         "------         -                                                           -------------",
@@ -160,6 +160,19 @@ platforms = []  # то, во что мы будем врезаться
 obstacles = []  # то, из-за чего мы можем проиграть
 finish = []    # здесь хранится флаг
 cllctd_obj = []  # собираемые объекты
+stars = []
+
+
+def create_particles(position):
+    count = 20
+    speed = range(-5, 6)
+    for _ in range(count):
+        st = Particle(
+            position,
+            random.choice(speed),
+            random.choice(speed)
+                 )
+        stars.append(st)
 
 
 def generate_level(what_level):
@@ -234,6 +247,29 @@ class Drugs(pygame.sprite.Sprite):
         self.image = pygame.transform.scale(self.image, (TILE_WIDTH, TILE_HEIGHT))
 
 
+class Particle(pygame.sprite.Sprite):
+    stars = [load_image("star.png")]
+    for scale in (5, 10, 20):
+        stars.append(pygame.transform.scale(stars[0],
+                                            (scale, scale)))
+
+    def __init__(self, pos, dx, dy):
+        super().__init__(stars_group, all_sprites)
+        self.image = random.choice(self.stars)
+        self.rect = self.image.get_rect()
+        self.velocity = [dx, dy]
+        self.rect.x, self.rect.y = pos
+        self.gravity = GRAVITY
+
+    def update(self):
+        self.velocity[1] += self.gravity
+        self.rect.x += self.velocity[0]
+        self.rect.y += self.velocity[1]
+
+        if not self.rect.colliderect((0, 0, WIDTH, HEIGHT)):
+            self.kill()
+
+
 class Player(pygame.sprite.Sprite):
     def __init__(self, pos_x, pos_y):
         super().__init__(player_group, all_sprites)
@@ -242,6 +278,7 @@ class Player(pygame.sprite.Sprite):
                                                TILE_HEIGHT * pos_y)
         self.yvel = 0  # скорость вертикального перемещения
         self.onGround = False
+        self.finish = False
 
     def update(self, left_d, right_d, up_d, platforms_list, obstacles_list, finish_list, cllctd_obj_list):
         for ob in obstacles_list:    # если мы натыкаемся на препятствие, то мы проиграли, игра заканчивается
@@ -253,7 +290,11 @@ class Player(pygame.sprite.Sprite):
         for fg in finish_list:   # если мы достикли флаг, то мы выиграли, игра заканчивается
             if pygame.sprite.collide_rect(self, fg):
                 print('You won!')
-                terminate()
+                if not self.finish:
+                    create_particles((self.rect.x, self.rect.y))
+                    self.finish = True
+
+
         for drg in cllctd_obj_list:
             if pygame.sprite.collide_rect(self, drg):
                 drg.kill()
@@ -365,7 +406,11 @@ while running:
     tiles_group.draw(screen)
     player_group.draw(screen)
     coll_obj_group.draw(screen)
+    stars_group.draw(screen)
+    stars_group.update()
     camera.update(player)
+
+
 
     if cntr % 5 == 0:
         coll_obj_group.update()
@@ -375,6 +420,8 @@ while running:
         camera.apply(sprite)
 
     player.update(left, right, up, platforms, obstacles, finish, cllctd_obj)
+    if player.finish and not stars:
+        terminate()
     pygame.display.flip()
 
 terminate()
