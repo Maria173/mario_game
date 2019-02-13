@@ -14,6 +14,7 @@ JUMP_POWER = 10
 MOVE_SPEED = 7
 GRAVITY = 0.4
 BACKGROUND_COLOR = "#228B22"
+ACTIVE_BONUS = None
 while True:
     level = input('Level number (1, 2, 3, 4 or 5) : ')
     if level in ['1', '2', '3', '4', '5']:
@@ -31,6 +32,26 @@ tiles_group = pygame.sprite.Group()
 player_group = pygame.sprite.Group()
 coll_obj_group = pygame.sprite.Group()
 stars_group = pygame.sprite.Group()
+
+
+def speed_boost():
+    global FPS
+    FPS = 120
+
+
+def speed_low():
+    global FPS
+    FPS = 30
+
+
+def choose_bonus():
+    bonus = random.choice(['boost', 'low'])
+    if bonus == 'boost':
+        speed_boost()
+    elif bonus == 'low':
+        speed_low()
+
+
 def load_image(name, colorkey=None):
     fullname = os.path.join('data', name)
     try:
@@ -91,13 +112,13 @@ level1 = [
         "----------------------------------------------------------------------------------------",
         "-                                                                           ------------",
         "-                                                                      #    ------------",
-        "-                                      ----                           ---   ------------",
+        "-                    ?                 ----                           ---   ------------",
         "- @               -----------                           -----               ------------",
-        "---                                                                         ------------",
+        "---       ?                                                                 ------------",
         "-         --                 #     --           #   -----        --------   ------------",
         "-   #          #            -----               -                          F------------",
         "------         -                                                           -------------",
-        "-ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo------------",
+        #"-ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo------------",
         "----------------------------------------------------------------------------------------"]
 
 level2 = [
@@ -113,7 +134,7 @@ level2 = [
         "-                                                       -----          -    ------------",
         "-ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo------------",
         "----------------------------------------------------------------------------------------"]
-        
+
 level3 = [
 
         "----------------------------------------------------------------------------------------",
@@ -160,7 +181,7 @@ platforms = []  # то, во что мы будем врезаться
 obstacles = []  # то, из-за чего мы можем проиграть
 finish = []    # здесь хранится флаг
 cllctd_obj = []  # собираемые объекты
-stars = []
+stars_on_screen = []
 
 
 def create_particles(position):
@@ -172,7 +193,16 @@ def create_particles(position):
             random.choice(speed),
             random.choice(speed)
                  )
-        stars.append(st)
+        stars_on_screen.append(st)
+
+
+# def load_level(filename):
+#     filename = 'data/' + filename
+#     with open(filename, 'r') as map_file:
+#         level_map = [line.strip() for line in map_file]
+#
+#     max_width = max(map(len, level_map))
+#     return list(map(lambda x: x.ljust(max_width, '.'), level_map))
 
 
 def generate_level(what_level):
@@ -196,6 +226,10 @@ def generate_level(what_level):
             elif what_level[y][x] == '#':
                 drg = Drugs('coin', x, y, 5, 2)
                 cllctd_obj.append(drg)
+            elif what_level[y][x] == '?':
+                bx = Tile('box', x, y)
+                cllctd_obj.append(bx)
+
 
     return new_player
 
@@ -205,12 +239,14 @@ tile_images = {'wall': load_image('mario_block.png'),
                'obstacle': load_image('blackhole.png'),
                'fire': load_image('fire.png'),
                'flag': load_image('flag.png'),
-               'coin': load_image('coin.png')}
+               'coin': load_image('coin.png'),
+               'box': load_image('box.png')}
 
 
 class Tile(pygame.sprite.Sprite):
     def __init__(self, tile_type, pos_x, pos_y):
         super().__init__(tiles_group, all_sprites)
+        self.type = tile_type
         self.image = tile_images[tile_type]
         self.image = pygame.transform.scale(self.image, (TILE_WIDTH, TILE_HEIGHT))
         self.rect = self.image.get_rect().move(TILE_WIDTH * pos_x,
@@ -220,7 +256,7 @@ class Tile(pygame.sprite.Sprite):
 class Drugs(pygame.sprite.Sprite):
     def __init__(self, tile_type, pos_x, pos_y, columns, rows):
         super().__init__(coll_obj_group, all_sprites)
-
+        self.type = 'coin'
         self.frames = []
         self.cut_sheet(tile_images[tile_type], columns, rows)
         self.cur_frame = 0
@@ -259,7 +295,7 @@ class Particle(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.velocity = [dx, dy]
         self.rect.x, self.rect.y = pos
-        self.gravity = GRAVITY
+        self.gravity = 0.2
 
     def update(self):
         self.velocity[1] += self.gravity
@@ -268,6 +304,7 @@ class Particle(pygame.sprite.Sprite):
 
         if not self.rect.colliderect((0, 0, WIDTH, HEIGHT)):
             self.kill()
+            stars_on_screen.remove(self)
 
 
 class Player(pygame.sprite.Sprite):
@@ -289,14 +326,15 @@ class Player(pygame.sprite.Sprite):
 
         for fg in finish_list:   # если мы достикли флаг, то мы выиграли, игра заканчивается
             if pygame.sprite.collide_rect(self, fg):
-                print('You won!')
                 if not self.finish:
                     create_particles((self.rect.x, self.rect.y))
                     self.finish = True
 
-
         for drg in cllctd_obj_list:
+
             if pygame.sprite.collide_rect(self, drg):
+                if drg.type == 'box':
+                    choose_bonus()
                 drg.kill()
 
         if up_d:
@@ -410,8 +448,6 @@ while running:
     stars_group.update()
     camera.update(player)
 
-
-
     if cntr % 5 == 0:
         coll_obj_group.update()
     cntr = (cntr + 1) % 5
@@ -420,7 +456,8 @@ while running:
         camera.apply(sprite)
 
     player.update(left, right, up, platforms, obstacles, finish, cllctd_obj)
-    if player.finish and not stars:
+    if player.finish and not stars_on_screen:
+        print('You won!')
         terminate()
     pygame.display.flip()
 
