@@ -3,8 +3,6 @@ import pygame
 import random
 import sys
 
-pygame.init()
-
 FPS = 60
 WIDTH = 800
 HEIGHT = 374
@@ -15,6 +13,7 @@ MOVE_SPEED = 7
 GRAVITY = 0.4
 BACKGROUND_COLOR = "#228B22"
 ACTIVE_BONUS = None
+
 while True:
     level = input('Level number (1, 2, 3, 4 or 5) : ')
     if level in ['1', '2', '3', '4', '5']:
@@ -36,7 +35,7 @@ stars_group = pygame.sprite.Group()
 
 def speed_boost():
     global FPS
-    FPS = 120
+    FPS = 200
 
 
 def speed_low():
@@ -73,8 +72,6 @@ def terminate():
     sys.exit()
 
 
-
-
 def start_screen(level_n):
     need_str = "       You chose level " + str(level_n)
     intro_text = ["           Super Mario",
@@ -107,76 +104,6 @@ def start_screen(level_n):
         clock.tick(FPS)
 
 
-level1 = [
-
-        "----------------------------------------------------------------------------------------",
-        "-                                                                           ------------",
-        "-                                                                      #    ------------",
-        "-                    ?                 ----                           ---   ------------",
-        "- @               -----------                           -----               ------------",
-        "---       ?                                                                 ------------",
-        "-         --                 #     --           #   -----        --------   ------------",
-        "-   #          #            -----               -                          F------------",
-        "------         -                                                           -------------",
-        #"-ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo------------",
-        "----------------------------------------------------------------------------------------"]
-
-level2 = [
-
-        "----------------------------------------------------------------------------------------",
-        "-                                                                           ------------",
-        "-                     #                     #       #                       ------------",
-        "-                    --                    ---     ---                      ------------",
-        "-   ----       x        --           x                                      ------------",
-        "- @         -------            -----------                      ---       F ------------",
-        "---      #                 #                    ----                     ---------------",
-        "-       --                 ---                          x              #    ------------",
-        "-                                                       -----          -    ------------",
-        "-ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo------------",
-        "----------------------------------------------------------------------------------------"]
-
-level3 = [
-
-        "----------------------------------------------------------------------------------------",
-        "-                                                                           ------------",
-        "- @                              #                       #                  ------------",
-        "--------                        --                       -          #x      ------------",
-        "-                  x         --                    x               ----     ------------",
-        "-                ----                         --------          --          ------------",
-        "-    #                                 ----                              F  ------------",
-        "-   ---                ---                          #                -----  ------------",
-        "-         -----                                    --------                 ------------",
-        "-ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo------------",
-        "----------------------------------------------------------------------------------------"]
-
-level4 = [
-
-        "----------------------------------------------------------------------------------------",
-        "-                                                                           ------------",
-        "-                                                      #                   #------------",
-        "-           x     --                                   --         ----     -------------",
-        "-           ---                        x        ---             x           ------------",
-        "-                 #            -----   -              #      ----           ------------",
-        "-     ----        -                                  --                   F ------------",
-        "-  @                  ----            #    ----                          ---------------",
-        "-  -                                 --                                     ------------",
-        "-ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo------------",
-        "----------------------------------------------------------------------------------------"]
-
-level5 = [
-
-        "----------------------------------------------------------------------------------------",
-        "-                                                                           ------------",
-        "-                #                                                X         ------------",
-        "-                -                                             -----        ------------",
-        "-  #   x                                         x                      #x  ------------",
-        "-  --  ---                           -----      --                     ---  ------------",
-        "-                          x   #                   #        ----            ------------",
-        "-           -----      -   -   -                   --                       ------------",
-        "-@                                                                         F------------",
-        "--ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo-------------",
-        "----------------------------------------------------------------------------------------"]
-
 platforms = []  # то, во что мы будем врезаться
 obstacles = []  # то, из-за чего мы можем проиграть
 finish = []    # здесь хранится флаг
@@ -196,13 +123,13 @@ def create_particles(position):
         stars_on_screen.append(st)
 
 
-# def load_level(filename):
-#     filename = 'data/' + filename
-#     with open(filename, 'r') as map_file:
-#         level_map = [line.strip() for line in map_file]
-#
-#     max_width = max(map(len, level_map))
-#     return list(map(lambda x: x.ljust(max_width, '.'), level_map))
+def load_level(filename):
+    filename = 'data/' + filename
+    with open(filename, 'r') as map_file:
+        level_map = [line.strip() for line in map_file]
+
+    max_width = max(map(len, level_map))
+    return list(map(lambda x: x.ljust(max_width, ' '), level_map))
 
 
 def generate_level(what_level):
@@ -229,8 +156,6 @@ def generate_level(what_level):
             elif what_level[y][x] == '?':
                 bx = Tile('box', x, y)
                 cllctd_obj.append(bx)
-
-
     return new_player
 
 
@@ -285,6 +210,7 @@ class Coin(pygame.sprite.Sprite):
 
 class Particle(pygame.sprite.Sprite):
     stars = [load_image("star.png")]
+    stars_on_screen = []
     for scale in (5, 10, 20):
         stars.append(pygame.transform.scale(stars[0],
                                             (scale, scale)))
@@ -398,19 +324,25 @@ class Camera:
 
 if level == '1':
     start_screen(1)
-    player = generate_level(level1)
+    level = load_level('level1.txt')
+    player = generate_level(level)
 if level == '2':
     start_screen(2)
-    player = generate_level(level2)
+    level = load_level('level2.txt')
+    player = generate_level(level)
 if level == '3':
     start_screen(3)
-    player = generate_level(level3)
+    level = load_level('level3.txt')
+    player = generate_level(level)
 if level == '4':
     start_screen(4)
-    player = generate_level(level4)
+    level = load_level('level4.txt')
+    player = generate_level(level)
 if level == '5':
     start_screen(5)
-    player = generate_level(level5)
+    level = load_level('level5.txt')
+    player = generate_level(level)
+
 
 camera = Camera()
 
@@ -456,6 +388,7 @@ while running:
         camera.apply(sprite)
 
     player.update(left, right, up, platforms, obstacles, finish, cllctd_obj)
+
     if player.finish and not stars_on_screen:
         print('You won!')
         terminate()
