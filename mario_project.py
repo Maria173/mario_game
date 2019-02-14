@@ -2,8 +2,11 @@ import os
 import pygame
 import random
 import sys
+import time
+
 
 pygame.init()
+
 
 FPS = 60
 WIDTH = 800
@@ -249,6 +252,7 @@ class Drugs(pygame.sprite.Sprite):
 
 class Particle(pygame.sprite.Sprite):
     stars = [load_image("star.png")]
+    stars_on_screen = []
     for scale in (5, 10, 20):
         stars.append(pygame.transform.scale(stars[0],
                                             (scale, scale)))
@@ -268,6 +272,7 @@ class Particle(pygame.sprite.Sprite):
 
         if not self.rect.colliderect((0, 0, WIDTH, HEIGHT)):
             self.kill()
+
 
 
 class Player(pygame.sprite.Sprite):
@@ -293,6 +298,7 @@ class Player(pygame.sprite.Sprite):
                 if not self.finish:
                     create_particles((self.rect.x, self.rect.y))
                     self.finish = True
+
 
 
         for drg in cllctd_obj_list:
@@ -420,6 +426,7 @@ while running:
         camera.apply(sprite)
 
     player.update(left, right, up, platforms, obstacles, finish, cllctd_obj)
+
     if player.finish and not stars:
         terminate()
     pygame.display.flip()
