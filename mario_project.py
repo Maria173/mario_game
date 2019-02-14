@@ -224,7 +224,7 @@ def generate_level(what_level):
             elif what_level[y][x] == '@':
                 new_player = Player(x, y)
             elif what_level[y][x] == '#':
-                drg = Drugs('coin', x, y, 5, 2)
+                drg = Coin('coin', x, y, 5, 2)
                 cllctd_obj.append(drg)
             elif what_level[y][x] == '?':
                 bx = Tile('box', x, y)
@@ -253,7 +253,7 @@ class Tile(pygame.sprite.Sprite):
                                                TILE_HEIGHT * pos_y)
 
 
-class Drugs(pygame.sprite.Sprite):
+class Coin(pygame.sprite.Sprite):
     def __init__(self, tile_type, pos_x, pos_y, columns, rows):
         super().__init__(coll_obj_group, all_sprites)
         self.type = 'coin'
