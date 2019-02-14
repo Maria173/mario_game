@@ -12,14 +12,6 @@ JUMP_POWER = 10
 MOVE_SPEED = 7
 GRAVITY = 0.4
 BACKGROUND_COLOR = "#228B22"
-ACTIVE_BONUS = None
-
-while True:
-    level = input('Level number (1, 2, 3, 4 or 5) : ')
-    if level in ['1', '2', '3', '4', '5']:
-        break
-    else:
-        print('There is no such level! Try again')
 
 pygame.init()
 
@@ -31,6 +23,7 @@ tiles_group = pygame.sprite.Group()
 player_group = pygame.sprite.Group()
 coll_obj_group = pygame.sprite.Group()
 stars_group = pygame.sprite.Group()
+levels_group = pygame.sprite.Group()
 
 
 def speed_boost():
@@ -72,11 +65,8 @@ def terminate():
     sys.exit()
 
 
-def start_screen(level_n):
-    need_str = "       You chose level " + str(level_n)
+def start_screen():
     intro_text = ["           Super Mario",
-                  "",
-                  need_str,
                   "      If you want to begin:",
                   "           press any key ",
                   "       or tap the window"]
@@ -99,9 +89,63 @@ def start_screen(level_n):
             if event.type == pygame.QUIT:
                 terminate()
             elif event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
-                return  # начинаем игру
+                return choose_level()
+
         pygame.display.flip()
         clock.tick(FPS)
+
+
+def choose_level():
+    fon = pygame.transform.scale(load_image('fon.jpg'), (WIDTH, HEIGHT + 50))
+    screen.blit(fon, (0, 0))
+    font = pygame.font.Font(None, 30)
+    text_coord = 15
+    line = 'SELECT LEVEL'
+    string_rendered = font.render(line, 1, pygame.Color('black'))
+    intro_rect = string_rendered.get_rect()
+    text_coord += 10
+    intro_rect.top = text_coord
+    intro_rect.x = 10
+    text_coord += intro_rect.height
+    screen.blit(string_rendered, intro_rect)
+    y = 1
+    for x in range(3):
+        Level(x + 1, x, y)
+    y = 2
+    for x in range(2):
+        Level(x + 4, x, y)
+
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                for btn in levels_group:
+                    btn.get_event(event)
+                    if btn.active:
+                        return btn.num
+
+        levels_group.draw(screen)
+        pygame.display.flip()
+        clock.tick(FPS)
+
+
+class Level(pygame.sprite.Sprite):
+    width = 70
+    height = 70
+
+    def __init__(self, number, pos_x, pos_y):
+        super().__init__(levels_group)
+        self.active = False
+        self.num = number
+        self.image = tile_images[number]
+        self.image = pygame.transform.scale(self.image, (Level.width, Level.height))
+        self.rect = self.image.get_rect().move(Level.width * pos_x,
+                                               Level.height * pos_y)
+
+    def get_event(self, event):
+        if self.rect.collidepoint(event.pos):
+            self.active = True
 
 
 platforms = []  # то, во что мы будем врезаться
@@ -165,7 +209,12 @@ tile_images = {'wall': load_image('mario_block.png'),
                'fire': load_image('fire.png'),
                'flag': load_image('flag.png'),
                'coin': load_image('coin.png'),
-               'box': load_image('box.png')}
+               'box': load_image('box.png'),
+               1: load_image('level1.png'),
+               2: load_image('level2.png'),
+               3: load_image('level3.png'),
+               4: load_image('level4.png'),
+               5: load_image('level5.png')}
 
 
 class Tile(pygame.sprite.Sprite):
@@ -322,27 +371,8 @@ class Camera:
         # self.dy = -(target.rect.y + target.rect.h // 2 - HEIGHT // 2)
 
 
-if level == '1':
-    start_screen(1)
-    level = load_level('level1.txt')
-    player = generate_level(level)
-if level == '2':
-    start_screen(2)
-    level = load_level('level2.txt')
-    player = generate_level(level)
-if level == '3':
-    start_screen(3)
-    level = load_level('level3.txt')
-    player = generate_level(level)
-if level == '4':
-    start_screen(4)
-    level = load_level('level4.txt')
-    player = generate_level(level)
-if level == '5':
-    start_screen(5)
-    level = load_level('level5.txt')
-    player = generate_level(level)
-
+level = load_level('level{}.txt'.format(start_screen()))
+player = generate_level(level)
 
 camera = Camera()
 
